@@ -3,27 +3,39 @@ const PAGE_SIZE = 2;
 
 exports.getAllBooks = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * PAGE_SIZE;
-    const totalBooks = await Book.countDocuments();
-    const books = await Book.find()
-      .sort({ createdAt: -1 }) 
-      .skip(skip)
-      .limit(PAGE_SIZE);
+    const { page } = req.query;
 
-    res.status(200).json({
-      message: "Books retrieved successfully!",
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalBooks / PAGE_SIZE),
-        PAGE_SIZE: PAGE_SIZE,
-        totalBooks: totalBooks
-      },
-      data: books,
+    if (page) {
+      const pageNumber = parseInt(page) || 1;
+      const skip = (pageNumber - 1) * PAGE_SIZE;
+
+      const totalBooks = await Book.countDocuments();
+      const books = await Book.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(PAGE_SIZE);
+
+      return res.status(200).json({
+        message: "Books retrieved successfully!",
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalBooks / PAGE_SIZE),
+          pageSize: PAGE_SIZE,
+          totalBooks: totalBooks,
+        },
+        data: books,
+      });
+    }
+
+    const allBooks = await Book.find().sort({ createdAt: -1 });
+    return res.status(200).json({
+        message: "All books retrieved successfully!",
+        totalBooks: allBooks.length,
+        data: allBooks
     });
-    
+
   } catch (error) {
-    res.status(500).json({ message: "Failed to retrieve books.", error: error.message });
+    res.status(500).json({ message: "Failed to retrieve books.", error: true });
   }
 };
 

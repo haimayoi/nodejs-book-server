@@ -1,28 +1,41 @@
 const Genre = require('../model/genre.model')
 const PAGE_SIZE = 2; 
+
 exports.getAllGenres = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * PAGE_SIZE;
-    const totalGenres = await Genre.countDocuments();
-    const genres = await Genre.find()
-      .sort({ name: 1 }) 
-      .skip(skip)
-      .limit(PAGE_SIZE);
+    const { page } = req.query;
 
-    res.status(200).json({
-      message: "Genres retrieved successfully!",
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalGenres / PAGE_SIZE),
-        PAGE_SIZE : PAGE_SIZE,
-        totalItems: totalGenres
-      },
-      data: genres,
+    if (page) {
+      const pageNumber = parseInt(page) || 1;
+      const skip = (pageNumber - 1) * PAGE_SIZE;
+
+      const totalGenres = await Genre.countDocuments();
+      const genres = await Genre.find()
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(PAGE_SIZE);
+
+      return res.status(200).json({
+        message: "Genres retrieved successfully!",
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalGenres / PAGE_SIZE),
+          pageSize: PAGE_SIZE,
+          totalItems: totalGenres,
+        },
+        data: genres,
+      });
+    }
+
+    const allGenres = await Genre.find().sort({ name: 1 });
+    return res.status(200).json({
+        message: "All genres retrieved successfully!",
+        totalItems: allGenres.length,
+        data: allGenres
     });
-    
+
   } catch (error) {
-    res.status(500).json({ message: "Failed to retrieve genres.", error: error.message });
+    res.status(500).json({ message: "Failed to retrieve genres.", error: true });
   }
 };
 
